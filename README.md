@@ -27,3 +27,26 @@ In this project, I aim to tackle each of them.
         - https://web.stanford.edu/~jurafsky/slp3/3.pdf (original formula)
         - https://huggingface.co/docs/transformers/perplexity (to handle inf when taking product of small values)
     - As a sanity test, I use the [bigram model with attention](https://www.youtube.com/watch?v=kCc8FmEb1nY) to compare with PPL from simple bigram model
+
+
+### 6/5/2023
+It seems to work (for now), so today the goal is to learn `mlflow`
+- [x] Use MLFlow to log on Google Colab
+    - [x] Config
+    - [x] Metric: step loss, final PPL
+    - [x] Log model / register model
+- [x] Make sure I can use that saved model
+
+I really want to only use `mlflow` end-to-end but the its model serving seems not be flexible for untraditional tasks like text-generation. List down what the API should do
+- Input: first letter / first word (whatever the use case to be decided later)
+- What is done behind the scene:
+    - Encode the context to input ids
+    - Feed the input ids into the model
+    - Decode the generated text
+- Output: return the generated text
+
+So basically what I need is a tool where I can define the workflow in a script and deploy the script. I guess `mlflow` doesn't have that flexibility (or maybe I didn't read the docs that thoroughly). Well, as I'm writing, I realize I should have save encode and decode function as artifacts too! To do this, I'll wrap the vocab, encoder, and decoder into a class called Tokenizer (inspired from HuggingFace 🤗)
+- [x] Wrap vocab, encode and decoder into tokenizer
+- [x] Update the code to use tokenizer
+
+Hmm there's some issues when I'm trying to call import model from BentoML... Will findout sometime later
