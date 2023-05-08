@@ -11,6 +11,11 @@ In this project, I aim to tackle each of them.
 ## Scenario 1: The data scientist updates the code and weights for the model 
 - [x] Reimplement bigram model from this with Spotify dataset
 - [x] Implement PPL metric
+- [x] Log model metrics with MLFlow
+- [x] Register model to MLFlow
+- [x] Use DagsHub as MLFlow experiment store
+- [x] Deploy the model with BentoML successfully on local
+- [] Trigger deployment on new registered model
 
 ### 5/5/2023
 - [x] Set up
@@ -50,3 +55,20 @@ So basically what I need is a tool where I can define the workflow in a script a
 - [x] Update the code to use tokenizer
 
 Hmm there's some issues when I'm trying to call import model from BentoML... Will findout sometime later
+
+### 8/5/2023
+Well turns out it was just naming issues. Should not name BentoML model with dash symbol `-`
+Here's the goal for today
+[x] Deploy the model with BentoML successfully on local
+
+Currently, our inference model has two components:
+- Bigram model
+- Tokenizer
+
+In order to reuse tokenizer in the inference code, I've saved it as artifacts via `pickle`. However, now that I realize `pickle` brings more trouble
+1. `pickle` won't reconstruct the instance, but need access to the class to load the pickled information in.
+2. The class `pickle` requires must be from `__main__`, which is `__main__.<ClassName>`, but of course the `ClassName` cannot be guaranteed to always be in `__main__` module.
+
+More details can be found [here](https://stackoverflow.com/questions/27732354/unable-to-load-files-using-pickle-and-multiple-modules).
+
+I will put this into the backlog to get rid of the unnecessary complexity. For now, please find the workaround of this in `inference/utils.py`. One more important thing to note is that it is highly recommended to have the same Python version for both the experiment and deployment environment.
