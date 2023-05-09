@@ -58,8 +58,8 @@ Hmm there's some issues when I'm trying to call import model from BentoML... Wil
 
 ### 8/5/2023
 Well turns out it was just naming issues. Should not name BentoML model with dash symbol `-`
-Here's the goal for today
-[x] Deploy the model with BentoML successfully on local
+Here's the goal for today:
+- [x] Deploy the model with BentoML successfully on local
 
 Currently, our inference model has two components:
 - Bigram model
@@ -72,3 +72,13 @@ In order to reuse tokenizer in the inference code, I've saved it as artifacts vi
 More details can be found [here](https://stackoverflow.com/questions/27732354/unable-to-load-files-using-pickle-and-multiple-modules).
 
 I will put this into the backlog to get rid of the unnecessary complexity. For now, please find the workaround of this in `inference/utils.py`. One more important thing to note is that it is highly recommended to have the same Python version for both the experiment and deployment environment.
+
+### 9/5/2023
+The more I read the code in `wrapper`, the more I feel something's off.
+- I first attempted to import the registered model from `mlflow` to `bentoml`. While the model was registered with `mlflow.pytorch`, `bentoml` only sees it as a PyFunc object only and hence, doesn't accept any custom function other than `predict`.
+- Therefore, one workaround is to use the model pulled directly from `mlflow`. We save it to `bentoml` only because it's part of the workflow.
+- Here's the thing, so what's the point of using `bentoml` then? It's very inefficient when:
+    1. We pull the model from `mlflow` and import it to `bentoml`
+    2. We pull the model from `mlflow` again when serving
+- One solution I could thing of right now is: When saving the model to `bentoml`, I'll pull the model from `mlflow` and then save it using `bentoml.pytorch`. A huge upside of this solution is that `bentoml` would accept any custom functions of a `pytorch` object. It should be demonstrated in `import_model` function in `workflow.py`. Btw this file would store the functions used for automated workflow later.
+

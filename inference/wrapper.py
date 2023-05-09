@@ -1,31 +1,21 @@
 import torch
 import bentoml
-import mlflow
-
-from .utils import TokenizerUnpickler
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class LyricsGenerator:
     def __init__(self, model_name="bigramlm:latest"):
-        bento_model = bentoml.mlflow.get(model_name)
-        mlflow_model_path = bento_model.path_of(
-            bentoml.mlflow.MLFLOW_MODEL_FOLDER)
+        bento_model = bentoml.pytorch.get(model_name)
 
-        self.model = mlflow.pytorch.load_model(mlflow_model_path)
+        self.model = bentoml.pytorch.load_model(model_name)
         self.model.to(device)
         self.model.eval()
 
-        tokenizer_path = mlflow.artifacts.download_artifacts(
-            mlflow_model_path + '/artifacts/tokenizer.pkl')
-        self.tokenizer = self._load_tokenizer(tokenizer_path)
-
-    def _load_tokenizer(self, tokenizer_path):
-        return TokenizerUnpickler(open(tokenizer_path, 'rb')).load()
+        self.tokenizer = bento_model.custom_objects["tokenizer"]
 
     def get_lyrics(self, start_phrase, max_new_tokens=2000):
-        start_phrase_as_ids = self.tokenizer.encode(start_phrase)
+        start_phrase_as_ids = self.tokenizer.encode(start_phrase.lower())
         context = torch.tensor(start_phrase_as_ids,
                                dtype=torch.long, device=device).reshape(1, -1)
 
