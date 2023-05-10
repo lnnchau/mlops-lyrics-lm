@@ -1,7 +1,16 @@
+from pathlib import Path
 from datetime import timedelta
 from airflow.decorators import task, dag
 from airflow.operators.bash import BashOperator
 import pendulum
+
+
+def get_requirements(filepath):
+    with open(filepath, 'r') as f:
+        requirements = f.readlines()
+
+    requirements = [r.strip() for r in requirements]
+    return requirements
 
 
 @dag(
@@ -12,7 +21,9 @@ import pendulum
     tags=["serve", "lyrics-gen"],
 )
 def serve_workflow_dag():
-    @task.branch(task_id="branch_task", provide_context=True)
+    @task.branch(
+        task_id="branch_task",
+        provide_context=True)
     def branch_func(**kwargs):
         ti = kwargs['ti']
         xcom_value = bool(ti.xcom_pull(task_ids="fetch_new_model"))
@@ -21,7 +32,9 @@ def serve_workflow_dag():
         else:
             return None
 
-    @task(task_id="fetch_new_model", do_xcom_push=True)
+    @task(
+        task_id="fetch_new_model",
+        do_xcom_push=True)
     def fetch_new_model():
         from mlflow.tracking.client import MlflowClient
 
@@ -113,10 +126,8 @@ def serve_workflow_dag():
             custom_objects={"tokenizer": tokenizer},
         )
 
-    @task.virtualenv(
+    @task(
         task_id="bento_build",
-        requirements='./requirements.txt',
-        system_site_packages=False,
         provide_context=True,
     )
     def build_bento(**context):
@@ -124,12 +135,10 @@ def serve_workflow_dag():
         Perform Bento build in a virtual environment.
         """
         import bentoml
+
         bentoml.bentos.build(
             "service.py:svc",
             name="bigramlm",
-            labels={
-                "job_id": context.run_id
-            },
             python={
                 "requirements_txt": "./requirements.txt"
             },

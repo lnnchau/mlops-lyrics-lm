@@ -83,10 +83,18 @@ The more I read the code in `wrapper`, the more I feel something's off.
 - One solution I could thing of right now is: When saving the model to `bentoml`, I'll pull the model from `mlflow` and then save it using `bentoml.pytorch`. A huge upside of this solution is that `bentoml` would accept any custom functions of a `pytorch` object. It should be demonstrated in `import_model` function in `workflow.py`. Btw this file would store the functions used for automated workflow later.
 
 ### 10/5/2023
-- Set up Airflow
-    - overview: deploy new model if there's a new registered model
-    - fetch_new_model_task >> branch_op >> select_model_task >> import_model_task >> build_bento_task >> deploy_task
-    - approach:
-        - use airflow inside docker container
-        - deploy to aws lambda
-    - blocker: permission denied when trying to create directory for new model
+Today's goal is to setup an Airflow for this repo.
+- Overview: deploy new model if there's a new registered model
+- Workflow:
+    1. Fetch new model version: This task checks if there's any new registered model. If yes, the pipeline continues
+    2. Select model: For now, this task compare the PPL (metric) of new models and existing production model (if any) to find the version with the best score
+    3. Import model: This task imports selected model to BentoML
+    4. Build Bento: This task builds a production-ready Bento to deploy
+    4. Deploy: Deploy to AWS Lambda
+- Current approach:
+    - Run Airflow locally, inside Docker container
+- Issue: permission denied when trying to create directory for new model
+- workaround: set the permission of `~/bentoml` to 777 (which sounds not so right)
+- Issue: BentoML couldn't find the file
+
+Just a bit of a rant. Maybe I'm a true real morning person. It's not even 10PM now yet I'm keeping doing wacky stuffs -.-
