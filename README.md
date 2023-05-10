@@ -82,3 +82,11 @@ The more I read the code in `wrapper`, the more I feel something's off.
     2. We pull the model from `mlflow` again when serving
 - One solution I could thing of right now is: When saving the model to `bentoml`, I'll pull the model from `mlflow` and then save it using `bentoml.pytorch`. A huge upside of this solution is that `bentoml` would accept any custom functions of a `pytorch` object. It should be demonstrated in `import_model` function in `workflow.py`. Btw this file would store the functions used for automated workflow later.
 
+### 10/5/2023
+- Set up Airflow
+    - overview: deploy new model if there's a new registered model
+    - fetch_new_model_task >> branch_op >> select_model_task >> import_model_task >> build_bento_task >> deploy_task
+    - approach:
+        - use airflow inside docker container
+        - deploy to aws lambda
+    - blocker: permission denied when trying to create directory for new model
