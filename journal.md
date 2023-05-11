@@ -89,7 +89,7 @@ Today's goal is to setup an Airflow for this repo.
     2. Select model: For now, this task compare the PPL (metric) of new models and existing production model (if any) to find the version with the best score
     3. Import model: This task imports selected model to BentoML
     4. Build Bento: This task builds a production-ready Bento. Bento 🍱 is a file archive with all the source code, models, data files and dependency configurations required for running a user-defined bentoml. Service, packaged into a standardized format.
-    4. Deploy: Deploy to AWS Lambda
+    5. Deploy: Deploy to AWS Lambda
 - Current approach:
     - Run Airflow locally, inside Docker container
 - Issue: permission denied when trying to create directory for new model
@@ -99,3 +99,9 @@ Today's goal is to setup an Airflow for this repo.
 Just a bit of a rant. Maybe I'm a true real morning person. It's not even 10PM now yet I'm keeping doing wacky stuffs -.-
 
 ### 11/5/2023
+- Had way too many problems trying to package everything via BentoML. Should always remeber to specify `models` param when initiate the service. It's optional param but very important since it lets BentoML know which model to package
+- It seems deploying to AWS Lambda is not feasible, so for now the pipeline would be as follows:
+    1. Fetch new model version: This task checks if there's any new registered model. If yes, the pipeline continues
+    2. Select model: For now, this task compare the PPL (metric) of new models and existing production model (if any) to find the version with the best score
+    3. Import model: This task imports selected model to BentoML
+    4. Build Bento: This task builds a production-ready Bento. Bento 🍱 is a file archive with all the source code, models, data files and dependency configurations required for running a user-defined bentoml. Service, packaged into a standardized format. The built Bento would be saved in a mounted volume for later use.
