@@ -5,14 +5,6 @@ from airflow.operators.bash import BashOperator
 import pendulum
 
 
-def get_requirements(filepath):
-    with open(filepath, 'r') as f:
-        requirements = f.readlines()
-
-    requirements = [r.strip() for r in requirements]
-    return requirements
-
-
 @dag(
     dag_id="serve_workflow",
     schedule_interval=timedelta(minutes=5),
@@ -126,39 +118,20 @@ def serve_workflow_dag():
             custom_objects={"tokenizer": tokenizer},
         )
 
-    @task(
-        task_id="bento_build",
-        provide_context=True,
-    )
-    def build_bento(**context):
-        """
-        Perform Bento build in a virtual environment.
-        """
-        import bentoml
-
-        bentoml.bentos.build(
-            "service.py:svc",
-            name="bigramlm",
-            python={
-                "requirements_txt": "./requirements.txt"
-            },
-            include=["*"],
-        )
-
     # initantiate tasks
     fetch_new_model_task = fetch_new_model()
     select_model_task = select_model()
     import_model_task = import_model()
-    build_bento_task = build_bento()
-    deploy_task = BashOperator(
-        task_id="deploy",
-        bash_command="bentoctl build -b bigramlm:latest -f deploy/deployment_config.yaml",
+
+    build_bento_task = BashOperator(
+        task_id="build_bento",
+        bash_command="bentoml build -f /opt/airflow/bentofile.yaml /opt/airflow"
     )
 
     # initantiate branch task
     branch_op = branch_func()
 
-    fetch_new_model_task >> branch_op >> select_model_task >> import_model_task >> build_bento_task >> deploy_task
+    fetch_new_model_task >> branch_op >> select_model_task >> import_model_task >> build_bento_task
 
 
 serve_workflow_dag()

@@ -5,14 +5,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class LyricsGenerator:
-    def __init__(self, model_name="bigramlm:latest"):
-        bento_model = bentoml.pytorch.get(model_name)
-
-        self.model = bentoml.pytorch.load_model(model_name)
-        self.model.to(device)
-        self.model.eval()
-
-        self.tokenizer = bento_model.custom_objects["tokenizer"]
+    def __init__(self, bentoml_model: bentoml.Model):
+        self.model = bentoml.pytorch.load_model(
+            bentoml_model.tag, device_id=device)
+        self.tokenizer = bentoml_model.custom_objects["tokenizer"]
 
     def get_lyrics(self, start_phrase, max_new_tokens=2000):
         start_phrase_as_ids = self.tokenizer.encode(start_phrase.lower())
@@ -29,9 +25,9 @@ class LyricsGeneratorRunnable(bentoml.Runnable):
     SUPPORTED_RESOURCES = ("cpu",)
     SUPPORTS_CPU_MULTI_THREADING = True
 
-    def __init__(self):
+    def __init__(self, bentoml_model: bentoml.Model):
         # load the model instance
-        self.generator = LyricsGenerator()
+        self.generator = LyricsGenerator(bentoml_model)
 
     @bentoml.Runnable.method(batchable=False)
     def generate_lyrics(self, input_data: str) -> str:
