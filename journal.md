@@ -15,6 +15,11 @@ In this project, I aim to tackle each of them.
 - [x] Use DagsHub as MLFlow experiment store
 - [x] Deploy the model with BentoML successfully on local
 - [] Trigger deployment on new registered model
+- [x] Schedule pipeline to package serving code for newly registered model
+
+### Backlog
+- [] Keep only code files in `src`
+- [] Get rid of `Tokenizer` pickle. Only pickle the vocab
 
 ### 5/5/2023
 - [x] Set up
@@ -105,3 +110,8 @@ Just a bit of a rant. Maybe I'm a true real morning person. It's not even 10PM n
     2. Select model: For now, this task compare the PPL (metric) of new models and existing production model (if any) to find the version with the best score
     3. Import model: This task imports selected model to BentoML
     4. Build Bento: This task builds a production-ready Bento. Bento 🍱 is a file archive with all the source code, models, data files and dependency configurations required for running a user-defined bentoml. Service, packaged into a standardized format. The built Bento would be saved in a mounted volume for later use.
+- [x] Documentation
+    - [x] Serve locally with BentoML
+    - [x] Airflow
+    - [x] Workflow
+- For tomorrow, I think I'd get back to the modelling part. Would like to see the code still works if more complexities are added to the model.

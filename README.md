@@ -2,6 +2,13 @@
 
 I journal about the progress of this project [here](journal.md)
 
+## Overview
+The workflow is designed under the following assumptions
+- The data scientists have the freedom in how he can develop the model, as long as they register the model to MLFlow model registry and follow the contract with the engineers
+- The engineers do not have to know details about the model. The only thing they need to know is the tag of the model
+
+![workflow image](assets/workflow.jpg)
+
 ## Folder structure
 ```
 ├── Dockerfile.airflow
