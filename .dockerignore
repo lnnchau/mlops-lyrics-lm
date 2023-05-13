@@ -1,0 +1,6 @@
+.vscode
+.dvc
+
+data/*
+notebooks/*
+env/*

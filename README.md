@@ -1,52 +1,86 @@
 # mlops-lyrics-lm
 
-## Goal: Build CI/CD pipeline for a ML project.
+I journal about the progress of this project [here](journal.md)
 
-I've been hyping about MLOps a few years ago, but I'm so ashamed to say that I was too lazy to get my hands dirty. Every time I planned to start a side project, I got too overwhelmed by the influx of tools, frameworks, documentations and tutorials that I was finally drowned before I even started. This time is no difference. However, I try to break down things. There are two scenarios where you need to automate the model deployment:
-- The data scientist updates the code and weights for the model
-- The production detects a data drift / new data => triggers the ML pipeline
+## Overview
+The workflow is designed under the following assumptions
+- The data scientists have the freedom in how he can develop the model, as long as they register the model to MLFlow model registry and follow the contract with the engineers
+- The engineers do not have to know details about the model. The only thing they need to know is the tag of the model
 
-In this project, I aim to tackle each of them.
+![workflow image](assets/workflow.jpg)
 
-## Scenario 1: The data scientist updates the code and weights for the model 
-- [x] Reimplement bigram model from this with Spotify dataset
-- [x] Implement PPL metric
+## Folder structure
+```
+├── Dockerfile.airflow
+├── requirements.airflow.txt
+├── docker-compose.airflow.yaml
+├── data                            # data for training, managed via DVC
+│   ├── readme.md
+│   ├── spotify_millsongdata.csv
+│   └── spotify_millsongdata.csv.dvc
+├── journal.md
+├── notebooks                       # .ipynb files for experiment purpose
+│   └── gpt_dev.ipynb
+└── src                             # model serving code
+    ├── bentofile.yaml
+    ├── dags                        # define Airflow pipeline
+    ├── inference                   # wrapper function for model inference
+    ├── requirements.txt
+    ├── service.py                  # Bento service file
+    └── utils
+```
 
-### 5/5/2023
-- [x] Set up
-    - [x] Git (this)
-    - [x] DagsHub (connect with this git)
-    - [x] DVC
-        - as suggested in the documentation, should install in a `Python3.8+` virtual env (you gotta know why)
-        - add the training data ([explanation](https://dvc.org/doc/start/data-management/data-versioning#add-click-to-get-a-peek-under-the-hood))
-- [x] Reimplement bigram model from this with Spotify dataset
-    - Start with Google Colab first for the sake of GPU resources
-    - Link Google Colab with this repo
-- [x] Implement PPL metric
-    - Reference
-        - https://web.stanford.edu/~jurafsky/slp3/3.pdf (original formula)
-        - https://huggingface.co/docs/transformers/perplexity (to handle inf when taking product of small values)
-    - As a sanity test, I use the [bigram model with attention](https://www.youtube.com/watch?v=kCc8FmEb1nY) to compare with PPL from simple bigram model
+## Model serving
+Change directory
+```
+cd src
+```
+### Development
+Install dependencies
+```
+pip install -r requirements
+```
 
+Run local
+```
+bentoml serve service:svc --reload
+```
 
-### 6/5/2023
-It seems to work (for now), so today the goal is to learn `mlflow`
-- [x] Use MLFlow to log on Google Colab
-    - [x] Config
-    - [x] Metric: step loss, final PPL
-    - [x] Log model / register model
-- [x] Make sure I can use that saved model
+### Production
+Build: 
+```
+bentoml build
+```
 
-I really want to only use `mlflow` end-to-end but the its model serving seems not be flexible for untraditional tasks like text-generation. List down what the API should do
-- Input: first letter / first word (whatever the use case to be decided later)
-- What is done behind the scene:
-    - Encode the context to input ids
-    - Feed the input ids into the model
-    - Decode the generated text
-- Output: return the generated text
+Containerize
+```
+bentoml containerize lyrics_generator:latest
+```
+- For Mac users: 
+    ```
+    bentoml containerize --opt platform=linux/amd64 lyrics_generator:latest
+    ```
 
-So basically what I need is a tool where I can define the workflow in a script and deploy the script. I guess `mlflow` doesn't have that flexibility (or maybe I didn't read the docs that thoroughly). Well, as I'm writing, I realize I should have save encode and decode function as artifacts too! To do this, I'll wrap the vocab, encoder, and decoder into a class called Tokenizer (inspired from HuggingFace 🤗)
-- [x] Wrap vocab, encode and decoder into tokenizer
-- [x] Update the code to use tokenizer
+Serve
+```
+docker run -it --rm -p 3000:3000 lyrics_generator:latest serve --production;
+```
 
-Hmm there's some issues when I'm trying to call import model from BentoML... Will findout sometime later
+## Run Airflow
+To have everything clean, we'll run Airflow inside Docker container.
+Build
+```
+docker compose -f docker-compose.airflow.yaml build
+```
+
+Start Airflow
+```
+docker compose -f docker-compose.airflow.yaml up
+```
+
+Clean up
+```
+docker compose -f docker-compose.airflow.yaml down --volumes --rmi all
+```
+
+More on [Running Airflow inside Docker](https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html) and [Airflow Docker image customization](https://airflow.apache.org/docs/docker-stack/build.html#building-the-image)
