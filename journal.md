@@ -115,3 +115,25 @@ Just a bit of a rant. Maybe I'm a true real morning person. It's not even 10PM n
     - [x] Airflow
     - [x] Workflow
 - For tomorrow, I think I'd get back to the modelling part. Would like to see the code still works if more complexities are added to the model.
+
+### 20/5/2023
+As anticipated, more problems are encountered as I am adding complexities to the model. Most of them lies in the device mismatch when trying to save and load the model. I made use of Google Colab for GPU power and run inference on CPU since my local machine does not have a GPU.
+
+I have trouble loading the model on my local machine. I found this in the model architecture code while debugging and I think this might be the problem
+```
+pos_emb = self.position_embedding_table(torch.arange(T, device=device)) # (T,C)
+```
+Currently, `device` is a global variable. Its value is `cuda` on Colab but should be `cpu` on local. I should make this variable configurable. Well actually I must do that to conform to the workflow I defined earlier. However, I, half lazy half impatient, wanted to see it works first, so I kept the original code. I guess I gotta get my hands dirty this time.
+
+One more thing about that line of code. As you can see below, `idx` is already brought to the compatible device before feeding into the model. Assigning device logic is done outside of the model. Meanwhile, the original has assigning device logic done both inside and outside of the model code.
+``` 
+def forward(self, idx, targets=None):
+    B, T = idx.shape
+
+    # idx and targets are both (B,T) tensor of integers
+    tok_emb = self.token_embedding_table(idx) # (B,T,C)
+    pos_emb = self.position_embedding_table(torch.arange(T, device=device)) # (T,C)
+```
+We know for sure that `torch.arange(T, device=device)` would have the same device with idx, so changing the device declaration to `device=idx.device` should be good for now. While this is the solution to our problem, I still reorganize the parameter configurations as mentioned above.
+
+Update... That does solve the problem. Besides that, I also encapsulate the training code into a class called Trainer (inspired by PyTorch Lightning)
